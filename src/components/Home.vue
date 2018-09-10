@@ -48,6 +48,12 @@
                    </v-container>  
                 </v-card>
                 </v-expansion-panel-content>
+                <v-expansion-panel-content>
+                  <div slot="header" class="item">Marker</div>
+                  <v-card>
+                    
+                  </v-card>
+                </v-expansion-panel-content>
             </v-expansion-panel>
             <v-flex xs10 style="margin: 0 auto; margin-top: 80px;">
               <v-slider 

@@ -13,7 +13,7 @@
                 <v-card>
                    <v-container grid-list-md>
                       <v-flex xs12 sm12>
-                        <v-text-field solo label="Search" ></v-text-field>
+                        <div id="geocoder" class="geocoder"></div>
                       </v-flex> 
                    </v-container>  
                 </v-card>
@@ -22,17 +22,93 @@
                 <div slot="header" class="item">Style</div>
                 <v-card>
                    <v-container grid-list-md>
-                      <v-flex xs12>
-                        <v-select
-                          :items="states"
-                          v-model="e1"
-                          menu-props="auto"
-                          label="Select"
-                          hide-details
-                          prepend-icon="map"
-                          single-line
-                        ></v-select>
-                      </v-flex> 
+                      <v-layout>
+                        
+                        <v-flex xs6 sm6>
+                          <v-tooltip top>
+                            <v-avatar
+                              :size="100"
+                              color="grey lighten-4"
+                              slot="activator"
+                              @click="streetStyle()"
+                            >
+                              <img src="../assets/street.png" alt="street">
+                            </v-avatar>
+                            <span>Street</span>
+                          </v-tooltip>
+                        </v-flex>
+
+                        <v-flex xs6 sm6>
+                          <v-tooltip top>
+                            <v-avatar
+                              :size="100"
+                              color="grey lighten-4"
+                              slot="activator"
+                              @click="lightStyle()"
+                            >
+                              <img src="../assets/light.png" alt="light">
+                            </v-avatar>
+                            <span>Light</span>
+                          </v-tooltip>
+                        </v-flex>
+                      </v-layout>
+                      <v-layout>
+                        <v-flex xs6 sm6>
+                          <v-tooltip top>
+                            <v-avatar
+                              :size="100"
+                              color="grey lighten-4"
+                              slot="activator"
+                              @click="darkStyle()"
+                            >
+                              <img src="../assets/dark.png" alt="dark">
+                            </v-avatar>
+                            <span>Dark</span>
+                          </v-tooltip>
+                        </v-flex>
+
+                        <v-flex xs6 sm6>
+                          <v-tooltip top>
+                            <v-avatar
+                              :size="100"
+                              color="grey lighten-4"
+                              slot="activator"
+                              @click="basicStyle()"
+                            >
+                              <img src="../assets/basic.png" alt="basic">
+                            </v-avatar>
+                            <span>Basic</span>
+                          </v-tooltip>
+                        </v-flex>
+                      </v-layout>
+                      <v-layout>
+                        <v-flex xs6 sm6>
+                          <v-tooltip top>
+                            <v-avatar
+                              :size="100"
+                              color="grey lighten-4"
+                              slot="activator"
+                              @click="brightStyle()"
+                            >
+                              <img src="../assets/bright.png" alt="bright" id="bright">
+                            </v-avatar>
+                            <span>Bright</span>
+                          </v-tooltip>
+                        </v-flex>
+                        <v-flex xs6 sm6>
+                          <v-tooltip top>
+                            <v-avatar
+                              :size="100"
+                              color="grey lighten-4"
+                              slot="activator"
+                              @click="satelliteStyle()"
+                            >
+                              <img src="../assets/satellite.png" alt="satellite">
+                            </v-avatar>
+                            <span>Satellite</span>
+                          </v-tooltip>
+                        </v-flex>
+                      </v-layout>
                    </v-container>  
                 </v-card>
                 </v-expansion-panel-content>
@@ -43,7 +119,7 @@
                       <v-flex xs12 sm12>
                         <v-text-field solo label="Size" v-model="height"></v-text-field>
                         <v-text-field solo label="Size" v-model="width"></v-text-field>
-                        <v-btn light color="primary" @click="setSize()">Apply</v-btn>
+                        <v-btn light color="primary" @click="retour()">Apply</v-btn>
                       </v-flex> 
                    </v-container>  
                 </v-card>
@@ -87,10 +163,7 @@
     <v-content>
       <v-container fluid fill-height justify-center>
           <v-flex xs12 sm12>
-            <v-card :height="hauteur" :width="longueur" style="margin: 0 auto">
-                <v-responsive :aspect-ratio="16/9" :height="hauteur" :width="longueur">
-                    <img src="" alt="">
-                </v-responsive>
+            <v-card :height="hauteur" :width="longueur" style="margin: 0 auto" id="map">
             </v-card>
             <v-flex row wrap class="text-xs-center d-flex align-center">
               <v-tooltip top>
@@ -164,8 +237,6 @@
 </template>
 
 <script>
-  import { mapGetters, mapActions } from 'vuex'
-
   export default {
     data(){
       return {
@@ -175,26 +246,133 @@
         drawer: null,
         hauteur: '400px',
         longueur: '800px',
-        slider: 14
+        slider: 14,
+        map: null
       }
     },
     mounted(){
-  
+      this.initMap();
     },
     methods: {
         setHeight: function(){
-           return this.hauteur = this.height
+           return this.hauteur = this.height;
         },
         setWidth: function(){
-           return this.longueur = this.width
+           return this.longueur = this.width;
         },
         setSize: function(){
           var h = this.setHeight();
-          var w = this.setWidth()
+          var w = this.setWidth();
+          var redefinir = this.setResize(h, w);
           return {
-            h, w
+            h, w, redefinir
           }
-        } 
+        },
+        setResize: function(height,width){
+            var mapCanvas = document.getElementsByClassName('mapboxgl-canvas')[0];
+            var ht = mapCanvas.style.height = this.height;
+            var lt = mapCanvas.style.width = this.width;
+            return {
+              ht, lt
+            }
+        },
+        retour: function(){
+          return new Promise((resolve, reject) => {
+            if(this.setSize()){
+              var maps = this.map;
+              setTimeout(function(){
+                resolve(maps.resize())
+              }, 250)
+            }
+            else{
+              reject('error')
+            }
+          })
+        },
+        initMap: function(){
+          mapboxgl.accessToken = 'pk.eyJ1IjoiYXJhZGltaXNvbiIsImEiOiJjamwzY2F5bGExdTAyM3ZvZGw0YWM4MXMzIn0.x-OlbsTxKnwonoGNOlgMYw'
+        
+          var maps = this.map = new mapboxgl.Map({
+             container: 'map',
+             style: 'mapbox://styles/mapbox/bright-v9',
+             center: [-74.27684020995312, 40.339997333210334],
+             zoom: 14,
+             pitch: 0,
+             bearing: 360
+          });
+        
+          // const zoom = new mapboxgl.NavigationControl({
+          //   accessToken: mapboxgl.accessToken
+          // });
+          // document.getElementById('zoom').appendChild(zoom.onAdd(map))
+          
+          const geocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken
+          });
+          document.getElementById('geocoder').appendChild(geocoder.onAdd(this.map))
+          
+          geocoder.on('result', function(ev) {
+              const element = document.createElement('div');
+              element.className = 'marker';
+              element.style.width = '64px';
+              element.style.height = '64px';
+
+              const popup = new mapboxgl.Popup({ offset: 25 })
+                .setHTML('Bonjour');
+              
+              new mapboxgl.Marker(element)
+                .setLngLat(ev.result.geometry.coordinates)
+                .setPopup(popup)
+                .addTo(maps); 
+          });
+
+          const element = document.createElement('div');
+            element.className = 'marker';
+            element.style.width = '64px';
+            element.style.height = '64px';
+
+            const popup = new mapboxgl.Popup({ offset: 25 })
+              .setHTML('Bonjour');
+
+            new mapboxgl.Marker(element)
+              .setLngLat([-74.27684020995312, 40.339997333210334])
+              .setPopup(popup)
+              .addTo(this.map);  
+
+          this.map.addControl(new mapboxgl.GeolocateControl({
+              positionOptions: {
+                  enableHighAccuracy: true
+              },
+              trackUserLocation: true
+          }));
+
+        },
+        darkStyle: function(){
+          this.map.setStyle('mapbox://styles/mapbox/dark-v9');
+        },
+        brightStyle: function(){
+          this.map.setStyle('mapbox://styles/mapbox/bright-v9');
+        },
+        lightStyle: function(){
+          this.map.setStyle('mapbox://styles/mapbox/light-v9');
+        },
+        basicStyle: function(){
+          this.map.setStyle('mapbox://styles/mapbox/basic-v9');
+        },
+        streetStyle: function(){
+          this.map.setStyle('mapbox://styles/mapbox/streets-v9');
+        },
+        satelliteStyle: function(){
+          this.map.setStyle('mapbox://styles/mapbox/satellite-v9');
+        },
+        storeJson: function(){
+          let myfic = {
+            nom: 'Andry',
+            age: 10
+          }
+          let mynewfic = JSON.stringify(myfic, null, '\t');
+          alert(mynewfic)
+        }
      },
     props: {
       source: String
@@ -211,5 +389,21 @@
 }
 #copy{
   color: black;
+}
+.mapboxgl-map{
+    width: 80%; 
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+.geocoder{
+        z-index:1;
+        width:100%;
+        margin: 0 auto;
+}
+.mapboxgl-ctrl-geocoder { min-width:100%; }
+
+.marker{
+   background: url('../assets/pin.svg')  
 }
 </style>

@@ -127,7 +127,22 @@
                 <v-expansion-panel-content>
                   <div slot="header" class="item">Marker</div>
                   <v-card>
-                    
+                      <v-container grid-list-md v-if="test == true">
+                        <v-flex xs12 sm12>
+                          <v-text-field solo label="Longitude"></v-text-field>
+                          <v-text-field solo label="Latitude"></v-text-field>
+                          <v-btn light color="primary">Apply</v-btn>
+                        </v-flex> 
+                    </v-container>
+                    <v-container grid-list-md v-else>
+                      <v-flex xs12 sm12>
+                        <v-text-field solo label="Search"></v-text-field>                       
+                      </v-flex> 
+                    </v-container>
+                    <v-container grid-list-md>
+                      <span class="" v-if="test == true"><a href="#" @click="markerFormFalse()">A partir d'une recherche</a></span>
+                      <span class="" v-else><a href="#" @click="markerFormTrue()">A partir des coordonnées</a></span>
+                    </v-container>    
                   </v-card>
                 </v-expansion-panel-content>
             </v-expansion-panel>
@@ -135,6 +150,8 @@
               <v-slider 
                 v-model="slider"
                 label="Zoom"
+                max="20"
+                @change="slideZoom()"
               ></v-slider>
               <div class="text-xs-center">
                 <v-chip label outline color="#5ac4bb">{{slider}}</v-chip>
@@ -155,9 +172,6 @@
       <v-spacer></v-spacer>
       <v-btn color="#5ac4bb">
         <span class="hidden-sm-and-down">Sign in</span>
-      </v-btn>
-      <v-btn icon large>
-        <v-icon>avatar</v-icon>
       </v-btn>
     </v-toolbar>
     <v-content>
@@ -247,13 +261,24 @@
         hauteur: '400px',
         longueur: '800px',
         slider: 14,
-        map: null
+        map: null,
+        test: false
       }
     },
     mounted(){
       this.initMap();
+      this.customizeInput();
     },
     methods: {
+        slideZoom: function(){
+          this.map.setZoom(this.slider);
+        },
+        markerFormTrue: function(){
+          return this.test = true;
+        },
+        markerFormFalse: function(){
+          return this.test = false;
+        },
         setHeight: function(){
            return this.hauteur = this.height;
         },
@@ -294,17 +319,12 @@
         
           var maps = this.map = new mapboxgl.Map({
              container: 'map',
-             style: 'mapbox://styles/mapbox/bright-v9',
+             style: 'mapbox://styles/mapbox/outdoors-v9',
              center: [-74.27684020995312, 40.339997333210334],
              zoom: 14,
              pitch: 0,
              bearing: 360
           });
-        
-          // const zoom = new mapboxgl.NavigationControl({
-          //   accessToken: mapboxgl.accessToken
-          // });
-          // document.getElementById('zoom').appendChild(zoom.onAdd(map))
           
           const geocoder = new MapboxGeocoder({
             accessToken: mapboxgl.accessToken
@@ -365,13 +385,16 @@
         satelliteStyle: function(){
           this.map.setStyle('mapbox://styles/mapbox/satellite-v9');
         },
+        customizeInput: function(){
+        },
         storeJson: function(){
           let myfic = {
-            nom: 'Andry',
-            age: 10
+            name: '',
+            popup: '',
+            icon: '',
+            coordinates: ''
           }
           let mynewfic = JSON.stringify(myfic, null, '\t');
-          alert(mynewfic)
         }
      },
     props: {
@@ -391,18 +414,19 @@
   color: black;
 }
 .mapboxgl-map{
-    width: 80%; 
-    margin: 0 auto;
-    position: relative;
-    z-index: 1;
+  width: 80%; 
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 .geocoder{
-        z-index:1;
-        width:100%;
-        margin: 0 auto;
+  z-index:1;
+  width:100%;
+  margin: 0 auto;
 }
-.mapboxgl-ctrl-geocoder { min-width:100%; }
-
+.mapboxgl-ctrl-geocoder { 
+  min-width:100%; 
+}
 .marker{
    background: url('../assets/pin.svg')  
 }

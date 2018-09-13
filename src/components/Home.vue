@@ -127,16 +127,21 @@
                 <v-expansion-panel-content>
                   <div slot="header" class="item">Marker</div>
                   <v-card>
-                      <v-container grid-list-md v-if="test == true">
+                    <v-container grid-list-md>
                         <v-flex xs12 sm12>
-                          <v-text-field solo label="Longitude"></v-text-field>
-                          <v-text-field solo label="Latitude"></v-text-field>
-                          <v-btn light color="primary">Apply</v-btn>
+                          <v-text-field solo label="Popup" id="popupmsg"></v-text-field>
+                        </v-flex> 
+                    </v-container>
+                    <v-container grid-list-md v-if="test == true">
+                        <v-flex xs12 sm12>
+                          <v-text-field solo label="Longitude" id="markerLong"></v-text-field>
+                          <v-text-field solo label="Latitude" id="markerLat"></v-text-field>
+                          <v-btn light color="primary" @click="markerLongLat()">Apply</v-btn>
                         </v-flex> 
                     </v-container>
                     <v-container grid-list-md v-else>
-                      <v-flex xs12 sm12>
-                        <v-text-field solo label="Search"></v-text-field>                       
+                      <v-flex xs12 sm12> 
+                         <div id="markerGeocoder" class="markerGeocoder"></div>                  
                       </v-flex> 
                     </v-container>
                     <v-container grid-list-md>
@@ -319,45 +324,40 @@
         
           var maps = this.map = new mapboxgl.Map({
              container: 'map',
-             style: 'mapbox://styles/mapbox/outdoors-v9',
+             style: 'mapbox://styles/aradimison/cjl6bzt1j0n2y2qpbpscrj296',
              center: [-74.27684020995312, 40.339997333210334],
              zoom: 14,
              pitch: 0,
              bearing: 360
           });
           
+          this.map.addControl(new mapboxgl.FullscreenControl());
+
           const geocoder = new MapboxGeocoder({
             accessToken: mapboxgl.accessToken
           });
           document.getElementById('geocoder').appendChild(geocoder.onAdd(this.map))
-          
-          geocoder.on('result', function(ev) {
+
+          var markerGeocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken
+          });
+          document.getElementById('markerGeocoder').appendChild(markerGeocoder.onAdd(this.map))
+
+          markerGeocoder.on('result', function(ev) {
               const element = document.createElement('div');
               element.className = 'marker';
-              element.style.width = '64px';
-              element.style.height = '64px';
+              element.id = 'marker';
+              element.style.width = '40px';
+              element.style.height = '40px';
 
               const popup = new mapboxgl.Popup({ offset: 25 })
-                .setHTML('Bonjour');
+                .setHTML(document.getElementById('popupmsg').value);
               
               new mapboxgl.Marker(element)
                 .setLngLat(ev.result.geometry.coordinates)
                 .setPopup(popup)
                 .addTo(maps); 
           });
-
-          const element = document.createElement('div');
-            element.className = 'marker';
-            element.style.width = '64px';
-            element.style.height = '64px';
-
-            const popup = new mapboxgl.Popup({ offset: 25 })
-              .setHTML('Bonjour');
-
-            new mapboxgl.Marker(element)
-              .setLngLat([-74.27684020995312, 40.339997333210334])
-              .setPopup(popup)
-              .addTo(this.map);  
 
           this.map.addControl(new mapboxgl.GeolocateControl({
               positionOptions: {
@@ -366,6 +366,27 @@
               trackUserLocation: true
           }));
 
+        },
+        markerLongLat: function(){
+          const element = document.createElement('div');
+              element.className = 'marker';
+              element.style.width = '40px';
+              element.style.height = '40px';
+
+              const popup = new mapboxgl.Popup({ offset: 25 })
+                .setHTML(document.getElementById('popupmsg').value);
+              
+              new mapboxgl.Marker(element)
+                .setLngLat([document.getElementById('markerLong').value, document.getElementById('markerLat').value])
+                .setPopup(popup)
+                .addTo(this.map); 
+
+              this.map.flyTo({
+                  center: [
+                      document.getElementById('markerLong').value,
+                      document.getElementById('markerLat').value
+                    ]
+              });
         },
         darkStyle: function(){
           this.map.setStyle('mapbox://styles/mapbox/dark-v9');
@@ -424,10 +445,15 @@
   width:100%;
   margin: 0 auto;
 }
+#markerGeocoder{
+  z-index:1;
+  width:100%;
+  margin: 0 auto;
+}
 .mapboxgl-ctrl-geocoder { 
   min-width:100%; 
 }
 .marker{
-   background: url('../assets/pin.svg')  
+   background: url('../assets/pin.svg'); 
 }
 </style>

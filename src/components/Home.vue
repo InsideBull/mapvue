@@ -136,6 +136,7 @@
                         <v-flex xs12 sm12>
                           <v-text-field solo label="Longitude" id="markerLong"></v-text-field>
                           <v-text-field solo label="Latitude" id="markerLat"></v-text-field>
+                          <div id="markerGeocoder" class="markerGeocoder" style="display: none"></div> 
                           <v-btn light color="primary" @click="markerLongLat()">Apply</v-btn>
                         </v-flex> 
                     </v-container>
@@ -175,9 +176,46 @@
         <span class="hidden-sm-and-down">Application</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn color="#5ac4bb">
+      <v-btn color="#5ac4bb" @click="active()">
         <span class="hidden-sm-and-down">Sign in</span>
       </v-btn>
+      <v-dialog v-model="dialog" width="500">
+        <v-card class="sign" light>
+          <v-card-title
+            class="title"
+          >
+            Sign in
+          </v-card-title>
+
+          <v-card-text>
+            <v-container grid-list-md>
+              <v-layout wrap>
+                <v-flex xs12>
+                  <v-text-field label="Email" required></v-text-field>
+                </v-flex>
+                <v-flex xs12>
+                  <v-text-field label="Password" type="password" required></v-text-field>
+                </v-flex>
+                <v-flex xs12 sm12>
+                  <v-select
+                    :items="['0-17', '18-29', '30-54', '54+']"
+                    label="Age"
+                    required
+                  ></v-select>
+                </v-flex>
+              </v-layout>
+            </v-container>
+          </v-card-text>
+
+          <v-divider></v-divider>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="#5ac4bb" flat @click.native="dialog = false">Close</v-btn>
+            <v-btn color="#5ac4bb" flat @click.native="dialog = false">Save</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-toolbar>
     <v-content>
       <v-container fluid fill-height justify-center>
@@ -272,7 +310,6 @@
     },
     mounted(){
       this.initMap();
-      this.customizeInput();
     },
     methods: {
         slideZoom: function(){
@@ -324,7 +361,7 @@
         
           var maps = this.map = new mapboxgl.Map({
              container: 'map',
-             style: 'mapbox://styles/aradimison/cjl6bzt1j0n2y2qpbpscrj296',
+             style: 'mapbox://styles/aradimison/cjl52hnyv651o2sp90p0j7174',
              center: [-74.27684020995312, 40.339997333210334],
              zoom: 14,
              pitch: 0,
@@ -343,15 +380,18 @@
           });
           document.getElementById('markerGeocoder').appendChild(markerGeocoder.onAdd(this.map))
 
+          //var img = this.imageToBase64('../assets/pin.svg');
+
           markerGeocoder.on('result', function(ev) {
               const element = document.createElement('div');
               element.className = 'marker';
               element.id = 'marker';
               element.style.width = '40px';
               element.style.height = '40px';
-
+              //element.style.background = 'url('+img+')';
+              
               const popup = new mapboxgl.Popup({ offset: 25 })
-                .setHTML(document.getElementById('popupmsg').value);
+                 .setHTML(document.getElementById('popupmsg').value);
               
               new mapboxgl.Marker(element)
                 .setLngLat(ev.result.geometry.coordinates)
@@ -406,7 +446,9 @@
         satelliteStyle: function(){
           this.map.setStyle('mapbox://styles/mapbox/satellite-v9');
         },
-        customizeInput: function(){
+        imageToBase64: function(data){     
+          var a = btoa(data);
+          console.log(a)
         },
         storeJson: function(){
           let myfic = {
@@ -416,6 +458,9 @@
             coordinates: ''
           }
           let mynewfic = JSON.stringify(myfic, null, '\t');
+        },
+        active: function(){
+          return this.dialog = true
         }
      },
     props: {
@@ -454,6 +499,10 @@
   min-width:100%; 
 }
 .marker{
-   background: url('../assets/pin.svg'); 
+     background-image: url('../assets/pin.svg');    
+}
+.title {
+  background-color: #5ac4bb;
+  color: white;
 }
 </style>
